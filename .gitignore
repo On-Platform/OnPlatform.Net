@@ -24,6 +24,8 @@ test-results/
 # Icon must end with two \r
 Icon
 
+#Incude Development user only Apps Directory
+devApps/
 
 # Thumbnails
 ._*
