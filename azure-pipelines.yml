@@ -1,0 +1,78 @@
+trigger:
+- main
+- hotFix/*
+- release
+- preview
+- development
+- defectFix/*
+- feature/*
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  coreProjectPath: '**/OnPlatform.Net.Core/*.csproj'
+  authProjectPath: '**/OnPlatform.Net.Auth/*.csproj'
+  major: 1
+  minor: 0
+  patch: 0
+  ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+    suffix: '-release'
+  ${{ elseif startsWith(variables['Build.SourceBranchName'], 'hotFix') }}:
+    suffix: '-hotfix'
+  ${{ elseif eq(variables['Build.SourceBranchName'], 'release') }}:
+    suffix: '-rc'
+  ${{ elseif eq(variables['Build.SourceBranchName'], 'preview') }}:
+    suffix: '-preview'
+  ${{ elseif eq(variables['Build.SourceBranchName'], 'development') }}:
+    suffix: '-dev'
+  ${{ else }}:
+    suffix: '-dev'
+
+name: $(major).$(minor).$(patch)$(suffix).$(Rev:r)
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Install .NET Core SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '7.x'
+  
+- task: NuGetToolInstaller@1
+
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'OnPlatfor.Net.Core'
+  inputs:
+    command: 'pack'
+    configuration: $(configuration)
+    packagesToPack: $(coreProjectPath)
+    ${{ if eq(variables['suffix'], '-release') }}:
+      versioningScheme: 'byBuildNumber'
+    ${{ else }}:
+      versioningScheme: 'byEnvVar'
+      versionEnvVar: Build.BuildNumber
+
+- task: DotNetCoreCLI@2
+  displayName: 'OnPlatfor.Net.Auth'
+  inputs:
+    command: 'pack'
+    configuration: $(configuration)
+    packagesToPack: $(authProjectPath)
+    ${{ if eq(variables['suffix'], '-release') }}:
+      versioningScheme: 'byBuildNumber'
+    ${{ else }}:
+      versioningScheme: 'byEnvVar'
+      versionEnvVar: Build.BuildNumber
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish the package to artifacts directory'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
