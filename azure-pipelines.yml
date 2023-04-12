@@ -13,7 +13,6 @@ pool:
 variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
   coreProjectPath: '**/OnPlatform.Net.Core/*.csproj'
   authProjectPath: '**/OnPlatform.Net.Auth/*.csproj'
   major: 1
@@ -21,16 +20,22 @@ variables:
   patch: 0
   ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
     suffix: '-release'
+    buildConfiguration: 'Release'
   ${{ elseif startsWith(variables['Build.SourceBranchName'], 'hotFix') }}:
     suffix: '-hotfix'
+    buildConfiguration: 'Debug'
   ${{ elseif eq(variables['Build.SourceBranchName'], 'release') }}:
     suffix: '-rc'
+    buildConfiguration: 'Release'
   ${{ elseif eq(variables['Build.SourceBranchName'], 'preview') }}:
     suffix: '-preview'
+    buildConfiguration: 'Release'
   ${{ elseif eq(variables['Build.SourceBranchName'], 'development') }}:
     suffix: '-dev'
+    buildConfiguration: 'Debug'
   ${{ else }}:
     suffix: '-dev'
+    buildConfiguration: 'Debug'
 
 name: $(major).$(minor).$(patch)$(suffix).$(Rev:r)
 
